@@ -8,7 +8,7 @@ ip-to-asn ip:
 	$ip
 	#$ip | get org
 
-ip-to-asn-to-iplist:
+ip-to-asn-to-iplist ip:
 	#!/usr/bin/env nu
 	echo "TODO"
 	#echo "IP: {{ip}}"
