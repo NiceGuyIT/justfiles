@@ -1,0 +1,31 @@
+{
+    "name": "Default dev container",
+    "image": "mcr.microsoft.com/devcontainers/python:3.10",
+    // Scispacy requires 8GB for the entity detection.
+    "hostRequirements": {
+        "cpus": 4
+    },
+    "waitFor": "onCreateCommand",
+    "updateContentCommand": {
+        "profile-env": "./scripts/profile-env.sh",
+        "bootstrap": "./scripts/bootstrap.sh",
+        "install": "sudo apt-get update && sudo apt-get install --no-install-recommends -y vim"
+    },
+    "postCreateCommand": "",
+    "customizations": {
+        "codespaces": {
+            // Open files for development
+            "openFiles": [
+                "justfile"
+            ]
+        },
+        // Basic vscode extensions for Python development
+        "vscode": {
+            "extensions": [
+				"tabnine-dev.tabnine-pro",
+				"streetsidesoftware.code-spell-checker",
+				"timonwong.shellcheck"
+			]
+        }
+    }
+}

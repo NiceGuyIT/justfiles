@@ -1,8 +1,11 @@
 # Exclude the bin directory in case it's used as BIN_DIR.
-bin/
+/bin/
 
-# Temp directory to download files for testing.
-tmp/
+# Local tmp sandbox for playing in
+/tmp/
+
+# Local cache for preserving bash history and other history files.
+/.cache/
 
 # Just is downloaded to the current directory during install.
 just
