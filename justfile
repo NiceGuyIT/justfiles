@@ -45,20 +45,3 @@ asn-list asn:
 	# API exceeded
 	# In the end, I used the repo above to block the entire country.
 	#http post --headers [ Content-Type application/x-www-form-urlencoded ] "https://traceroute-online.com/query" 'target={ {ip} }&query_type=asn'
-
-
-install-binary package:
-	#!/usr/bin/env nu
-	let packages = {
-		age: {
-			linux: "age-v{tag}-linux-amd64.tar.gz",
-			mac: "age-v{tag}-darwin-arm64.tar.gz",
-			windows: "age-v{tag}-windows-amd64.zip",
-			repo: "FiloSottile/age"
-		}
-	}
-	let os = $nu.os-info.name
-	let pattern = ($packages.{{package}} | get $os)
-	let repo = ($packages.{{package}} | get "repo")
-	print $"Downloading '($pattern)' from '($repo)'"
-	dra download --select $pattern $repo

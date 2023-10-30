@@ -1,0 +1,67 @@
+set positional-arguments
+set shell := ['nu', '-c']
+
+# default recipe to display help information
+default:
+	@just --list
+
+
+list-packages:
+	#!/usr/bin/env nu
+	let package = open "packages.json"
+	# let os = $nu.os-info.name
+	# let arch = $nu.os-info.arch
+	# print $"os: '($os)'"
+	# print $"arch: '($arch)'"
+	# print $"packages:"
+	$package
+
+
+list-package name:
+	#!/usr/bin/env nu
+	let packages = open "packages.json"
+	mut package = ($packages | where name == "{{name}}")
+	let os = $nu.os-info.name
+	let arch = $nu.os-info.arch
+	#$package.pattern = ($package.dra | get $os? | get 0)
+	$package
+	if $os in $package.dra {
+		print $"OS is in package"
+	}
+	$package.pattern = if $os in $package.dra {
+		($package.dra | get $os | get 0)
+	} else {
+		"Error"
+	}
+	if ($package.pattern.0 == "Error") {
+		print $"Error: Pattern not found for package '{{name}}' and OS '($os)'"
+		"Error: FINDME"
+		#exit (1)
+	}
+	#print $"os: '($os)'"
+	#print $"arch: '($arch)'"
+	#print $"packages:"
+	$package.pattern.0
+	#$package
+	#let pattern = ($package.{ {package} } | get $os)
+	#let repo = ($package.{ {package} } | get "repo")
+
+	#print $"Downloading '($pattern)' from '($repo)'"
+	#dra download --select $pattern $repo
+
+
+install-binary package:
+	#!/usr/bin/env nu
+	let packages = {
+		age: {
+			linux: "age-v{tag}-linux-amd64.tar.gz",
+			mac: "age-v{tag}-darwin-arm64.tar.gz",
+			windows: "age-v{tag}-windows-amd64.zip",
+			repo: "FiloSottile/age"
+		}
+	}
+	let os = $nu.os-info.name
+	let pattern = ($packages.{{package}} | get $os)
+	let repo = ($packages.{{package}} | get "repo")
+	print $"Downloading '($pattern)' from '($repo)'"
+	dra download --select $pattern $repo
