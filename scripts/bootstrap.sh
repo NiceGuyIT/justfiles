@@ -11,12 +11,13 @@ arch=$(uname -m)
 version="0.4.7"
 url="https://github.com/${owner}/${repo}/releases/download/${version}/${binary}-${version}-${arch}-unknown-${os}-musl.tar.gz"
 tmp_dir=$(mktemp --directory)
-curl --silent --location --output - "${url}" | tar --strip-components 1 --directory="${tmp_dir}" --extract --gzip --file -
-sudo cp "${tmp_dir}/${binary}" "/usr/local/bin/${binary}"
-sudo chmod a+rx,go-w "/usr/local/bin/${binary}"
-sudo chown root:root "/usr/local/bin/${binary}"
-rm -r "${tmp_dir}"
-ls -la "/usr/local/bin/${binary}"
+echo "${url}"
+#curl --silent --location --output - "${url}" | tar --strip-components 1 --directory="${tmp_dir}" --extract --gzip --file -
+#sudo cp "${tmp_dir}/${binary}" "/usr/local/bin/${binary}"
+#sudo chmod a+rx,go-w "/usr/local/bin/${binary}"
+#sudo chown root:root "/usr/local/bin/${binary}"
+#rm -r "${tmp_dir}"
+#ls -la "/usr/local/bin/${binary}"
 echo
 
 # just is a command runner similar to make.
@@ -28,16 +29,16 @@ echo "Installing ${binary}"
 os=$(uname -s | tr '[:upper:]' '[:lower:]')
 arch=$(uname -m)
 tmp_dir=$(mktemp --directory)
-cd "${tmp_dir}" || exit 1
+#cd "${tmp_dir}" || exit 1
 echo dra download --install --select "${binary}-{tag}-${arch}-unknown-${os}-musl.tar.gz" "${owner}/${repo}"
-dra download --install --select "${binary}-{tag}-${arch}-unknown-${os}-musl.tar.gz" "${owner}/${repo}"
-[[ ! -f "${tmp_dir}/${binary}" ]] && echo "Failed to download binary ${binary}" && rm -f "${tmp_dir}/${binary}" && exit 1
-sudo cp "${tmp_dir}/${binary}" "/usr/local/bin/${binary}"
-sudo chmod a+rx,go-w "/usr/local/bin/${binary}"
-sudo chown root:root "/usr/local/bin/${binary}"
-cd / || exit 1
-rm -r "${tmp_dir}"
-ls -la "/usr/local/bin/${binary}"
+#dra download --install --select "${binary}-{tag}-${arch}-unknown-${os}-musl.tar.gz" "${owner}/${repo}"
+#[[ ! -f "${tmp_dir}/${binary}" ]] && echo "Failed to download binary ${binary}" && rm -f "${tmp_dir}/${binary}" && exit 1
+#sudo cp "${tmp_dir}/${binary}" "/usr/local/bin/${binary}"
+#sudo chmod a+rx,go-w "/usr/local/bin/${binary}"
+#sudo chown root:root "/usr/local/bin/${binary}"
+#cd / || exit 1
+#rm -r "${tmp_dir}"
+#ls -la "/usr/local/bin/${binary}"
 echo
 
 # ouch makes decompression painless.
@@ -49,16 +50,24 @@ echo "Installing ${binary}"
 os=$(uname -s | tr '[:upper:]' '[:lower:]')
 arch=$(uname -m)
 tmp_dir=$(mktemp --directory)
-cd "${tmp_dir}" || exit 1
-echo dra download --install --select "${binary}-${arch}-unknown-${os}-musl.tar.gz" "${owner}/${repo}"
-dra download --install --select "${binary}-${arch}-unknown-${os}-musl.tar.gz" "${owner}/${repo}"
-[[ ! -f "${tmp_dir}/${binary}" ]] && echo "Failed to download binary ${binary}" && rm -f "${tmp_dir}/${binary}" && exit 1
-sudo cp "${tmp_dir}/${binary}" "/usr/local/bin/${binary}"
-sudo chmod a+rx,go-w "/usr/local/bin/${binary}"
-sudo chown root:root "/usr/local/bin/${binary}"
-cd / || exit 1
-rm -r "${tmp_dir}"
-ls -la "/usr/local/bin/${binary}"
+version="0.4.2"
+if [[ $os -eq "darwin" ]]; then
+	arch="x86_64"
+	url="https://github.com/${owner}/${repo}/releases/download/${version}/${binary}-${arch}-unknown-${os}-musl.tar.gz"
+else
+	url="https://github.com/${owner}/${repo}/releases/download/${version}/${binary}-${arch}-unknown-${os}-musl.tar.gz"
+fi
+#cd "${tmp_dir}" || exit 1
+#echo dra download --install --select "${binary}-${arch}-unknown-${os}-musl.tar.gz" "${owner}/${repo}"
+echo "${url}"
+#dra download --install --select "${binary}-${arch}-unknown-${os}-musl.tar.gz" "${owner}/${repo}"
+#[[ ! -f "${tmp_dir}/${binary}" ]] && echo "Failed to download binary ${binary}" && rm -f "${tmp_dir}/${binary}" && exit 1
+#sudo cp "${tmp_dir}/${binary}" "/usr/local/bin/${binary}"
+#sudo chmod a+rx,go-w "/usr/local/bin/${binary}"
+#sudo chown root:root "/usr/local/bin/${binary}"
+#cd / || exit 1
+#rm -r "${tmp_dir}"
+#ls -la "/usr/local/bin/${binary}"
 echo
 
 # Nushell is a new kind of shell.
@@ -71,14 +80,14 @@ echo "Installing ${binary}"
 os=$(uname -s | tr '[:upper:]' '[:lower:]')
 arch=$(uname -m)
 tmp_dir=$(mktemp --directory)
-cd "${tmp_dir}" || exit 1
+#cd "${tmp_dir}" || exit 1
 echo dra download --select "${binary}-{tag}-${arch}-unknown-${os}-musl.tar.gz" "${owner}/${repo}"
-dra download --select "${binary}-{tag}-${arch}-unknown-${os}-musl.tar.gz" "${owner}/${repo}"
-ouch decompress ${binary}-*-${arch}-unknown-${os}-musl.tar.gz
-sudo cp ${binary}-*-${arch}-unknown-${os}-musl/${binary} "/usr/local/bin/${binary}"
-sudo chmod a+rx,go-w "/usr/local/bin/${binary}"
-sudo chown root:root "/usr/local/bin/${binary}"
-cd / || exit 1
-rm -r "${tmp_dir}"
-ls -la "/usr/local/bin/${binary}"
+#dra download --select "${binary}-{tag}-${arch}-unknown-${os}-musl.tar.gz" "${owner}/${repo}"
+#ouch decompress ${binary}-*-${arch}-unknown-${os}-musl.tar.gz
+#sudo cp ${binary}-*-${arch}-unknown-${os}-musl/${binary} "/usr/local/bin/${binary}"
+#sudo chmod a+rx,go-w "/usr/local/bin/${binary}"
+#sudo chown root:root "/usr/local/bin/${binary}"
+#cd / || exit 1
+#rm -r "${tmp_dir}"
+#ls -la "/usr/local/bin/${binary}"
 echo
