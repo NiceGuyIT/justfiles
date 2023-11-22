@@ -252,12 +252,13 @@ def main [repo: string] {
 # rclone/rclone
 # mozilla/sops
 # junegunn/fzf - Not compressed
-# watchexec/watchexec
+# casey/just
 
 # List of packages that need work:
 # cloudflare/cfssl - Not compressed
 # ryochack/peep - Not compressed
 # starship/starship - Additional releases () need to be filtered
+# watchexec/watchexec - filter out checksums
 
 # List of packages that do not work:
 # alacritty/alacritty - https://github.com/alacritty/alacritty/blob/master/INSTALL.md#opensuse
