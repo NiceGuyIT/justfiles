@@ -20,8 +20,8 @@ def get_github_assets [repo: string] {
 # filter_assets will filter the assets list from the latest GitHub release by OS, ARCH and flavor until one asset
 # is found.
 def filter_assets [assets: record] {
-	log info "Asset list before filtering"
-	print $assets
+	#log info "Asset list before filtering"
+	#print ($assets | select name content_type size)
 
 	# Filter out non-binary content types. This is the list of acceptable Content-Type values.
 	let content_type_list = [
@@ -47,8 +47,8 @@ def filter_assets [assets: record] {
 			return $content_type_filter
 		}
 	} | flatten)
-	log info "content_type_filtered:"
-	print $content_type_filtered
+	#log info "content_type_filtered:"
+	#print ($content_type_filtered | select name content_type size)
 	if ($content_type_filtered | length) == 0 {
 		log error "Error: Could not filter assets by content type"
 		log error $"Current list: ($assets)"
@@ -60,6 +60,47 @@ def filter_assets [assets: record] {
 	} else if ($content_type_filtered | length) == 1 {
 		log debug $"Found one asset filtered by Content Type: ($content_type_filtered)"
 		return $content_type_filtered
+	}
+
+	# Filter out non-binary filenames such as .deb, .rpm, .sha256, .sha512, etc. by selecting only valid extensions.
+	# This is the list of acceptable filename values.
+	let filename_extension_list = [
+		"tar.gz",
+		"tar.xz",
+		"zip",
+	]
+	log info $"Iterating over filename_extension_list: ($filename_extension_list)"
+	let filename_extension_filtered = ($filename_extension_list | each {|fe|
+		log debug $"filename_extension_list: ($fe)"
+		let filename_extension_filter = ($content_type_filtered | each {|it|
+			let $ext = ($it.name | file_extension)
+			if ($it.name | file_extension) == $fe {
+				log debug $"filename_extension_list: ($fe); found: ($it.name)"
+				return $it
+			} else {
+				log debug $"filename_extension_list: ($fe); not found: ($it.name); extension: ($ext)"
+			}
+		})
+		#log info "filename_extension_filter:"
+		#print $filename_extension_filter
+		if ($filename_extension_filter | length) > 0 {
+			#log debug $"filename_extension_filter: ($fe); found: ($filename_extension_filter)"
+			return $filename_extension_filter
+		}
+	} | flatten)
+	log info "filename_extension_filtered:"
+	print $filename_extension_filtered
+	if ($filename_extension_filtered | length) == 0 {
+		log error "Error: Could not filter assets by filename extension"
+		# log error $"Current list: ($content_type_filtered)"
+		#print "content_type_filtered:"
+		#print ($content_type_filtered | select name content_type size)
+		print "Filename Extension Filtered:"
+		print $filename_extension_filtered
+		return null
+	} else if ($filename_extension_filtered | length) == 1 {
+		log debug $"Found one asset filtered by Filename Extension: ($filename_extension_filtered)"
+		return $filename_extension_filtered
 	}
 
 	# Map the OS to possible OS values in the release names. This is mainly for Apple.
@@ -82,7 +123,7 @@ def filter_assets [assets: record] {
 	log info $"Iterating over os_list: ($os_list)"
 	let os_filtered = ($os_list | each {|os|
 		#log debug $"os: ($nu.os-info.name); os_list: ($os)"
-		let os_filter = ($content_type_filtered | each {|it|
+		let os_filter = ($filename_extension_filtered | each {|it|
 			if $it.name =~ $os {
 				#log debug $"os: ($nu.os-info.name); os_list: ($os); found: ($it.name)"
 				return $it
@@ -218,7 +259,33 @@ def get_bin_dir []: string -> string {
 	return $bin_dir
 }
 
+# file_basename will return the basename from the filename.
+def file_basename []: string -> string {
+	split column '.' | get column1.0
+}
+
+# file_extension will return the extension of the filename.
+def file_extension []: string -> string {
+	str replace --regex '^[^\.]+\.' ''
+}
+
+# url_filename will extract the filename from the URL.
+def url_filename []: string -> string {
+	(url parse).path | path basename
+}
+
 def main [repo: string] {
+	# Separator for REPL
+	print "=============================="
+	# let myurl = "https://github.com/starship/starship/releases/download/v1.16.0/starship-aarch64-apple-darwin.tar.gz"
+	# let filename = $myurl | url_filename
+	# print $filename
+	# let basename = ($filename | file_basename)
+	# print $basename
+	# let ext = ($filename | file_extension)
+	# print $ext
+	# return null
+
 	log info $"Getting GitHub assets for '($repo)'"
 	let assets = get_github_assets $repo
 	let asset = filter_assets $assets
@@ -228,7 +295,9 @@ def main [repo: string] {
 		print $asset
 		return null
 	}
-	print ($asset | reject id node_id label uploader state download_count created_at updated_at)
+	# print ($asset | reject id node_id label uploader state download_count created_at updated_at)
+	print $asset
+	return null
 
 	let tmp_dir = { parent: "/tmp", stem: $"package-(random uuid)" } | path join
 	let files = download_github_asset $tmp_dir $asset.name.0 $asset.browser_download_url.0
