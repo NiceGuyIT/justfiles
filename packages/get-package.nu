@@ -5,10 +5,10 @@ $env.NU_LOG_LEVEL = DEBUG
 
 # get_github_assets will download the latest GitHub release JSON.
 def get_github_assets [repo: string] {
-	#let url = $"https://api.github.com/repos/($repo)/releases/latest"
-	#let latest = http get $url
+	let url = $"https://api.github.com/repos/($repo)/releases/latest"
+	let latest = http get $url
 	# TODO: Use this to skip the download and prevent hitting GitHub's rate limit.
-	let latest = open "github-starship.json"
+	#let latest = open "github-starship.json"
 	let assets = if "assets" in $latest {
 		$latest.assets
 	} else {
@@ -28,6 +28,7 @@ def filter_assets [assets: record] {
 		"application/octet-stream",
 		"application/zip",
 		"application/x-gtar",
+		"application/x-xz",
 		"application/gzip",
 	]
 	log info $"Iterating over content_type_list: ($content_type_list)"
@@ -171,7 +172,7 @@ def filter_assets [assets: record] {
 	log error $"Current list: ($flavor_filtered)"
 	log info "flavor_filtered:"
 	print $flavor_filtered
-	return null
+	return $flavor_filtered
 }
 
 # download_github_assets downloads the GitHub asset and returns a list of files.
@@ -221,16 +222,21 @@ def main [repo: string] {
 	log info $"Getting GitHub assets for '($repo)'"
 	let assets = get_github_assets $repo
 	let asset = filter_assets $assets
-	#log debug $"Filtered asset: ($asset)"
+	if ($asset | length) > 1 {
+		#log debug $"Filtered asset: ($asset)"
+		log error $"Failed to extract a single asset. Perhaps you need to filter based on name?"
+		print $asset
+		return null
+	}
 	print ($asset | reject id node_id label uploader state download_count created_at updated_at)
 
-	#let tmp_dir = { parent: "/tmp", stem: $"package-(random uuid)" } | path join
-	#let files = download_github_asset $tmp_dir $asset.name.0 $asset.browser_download_url.0
-	#log info $"Files: ($files)"
+	let tmp_dir = { parent: "/tmp", stem: $"package-(random uuid)" } | path join
+	let files = download_github_asset $tmp_dir $asset.name.0 $asset.browser_download_url.0
+	log info $"Files: ($files)"
 
-	#let bin_dir = get_bin_dir
-	#log debug $"bin_dir: ($bin_dir)"
-	#install_binaries $bin_dir $files
+	let bin_dir = get_bin_dir
+	log debug $"bin_dir: ($bin_dir)"
+	install_binaries $bin_dir $files
 }
 
 
@@ -246,6 +252,7 @@ def main [repo: string] {
 # rclone/rclone
 # mozilla/sops
 # junegunn/fzf - Not compressed
+# watchexec/watchexec
 
 # List of packages that need work:
 # cloudflare/cfssl - Not compressed
