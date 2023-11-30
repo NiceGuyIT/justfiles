@@ -105,7 +105,7 @@ def filter-os []: table<record> -> table<record> {
 			# https://github.com/zyedidia/micro/releases
 			#linux64,
 		],
-		darwin: [
+		macos: [
 			darwin,
 			apple,
 		],

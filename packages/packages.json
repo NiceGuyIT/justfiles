@@ -8,6 +8,10 @@
     "description": "A simple, modern and secure encryption tool (and Go library) with small explicit keys, no config options, and UNIX-style composability"
   },
   {
+    "name": "01mf02/jaq",
+    "description": "jaq is a jq clone with an emphasis on correctness, speed, and simplicity."
+  },
+  {
     "name": "adnanh/webhook",
     "description": "webhook is a lightweight incoming webhook server to run shell commands"
   },
