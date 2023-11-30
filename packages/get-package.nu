@@ -6,236 +6,60 @@ $env.NU_LOG_LEVEL = DEBUG
 # get-github-assets will download the latest GitHub release JSON and return the assets as a record.
 def get-github-assets [repo: string]: nothing -> table<record> {
 	# TODO: Use this to skip the download and prevent hitting GitHub's rate limit.
-	#http get $"https://api.github.com/repos/($repo)/releases/latest"
-	open $"github-atuin.json"
+	#open $"github-fzf.json"
+	http get $"https://api.github.com/repos/($repo)/releases/latest"
 		| get assets
 		| select browser_download_url name content_type size
 }
 
-# filter_assets will filter the GitHub assets list by OS, ARCH and flavor until one asset is found.
-def filter_assets [assets: record] {
-	#log info "Asset list before filtering"
-	#print ($assets | select name content_type size)
-
-	# Filter out non-binary content types. This is the list of acceptable Content-Type values.
-	let content_type_list = [
-		"application/octet-stream",
-		"application/zip",
-		"application/x-gtar",
-		"application/x-xz",
-		"application/gzip",
-	]
-	log info $"Iterating over content_type_list: ($content_type_list)"
-	let content_type_filtered = ($content_type_list | each {|ct|
-		#log debug $"content_type_list: ($ct)"
-		let content_type_filter = ($assets | each {|it|
-			if $it.content_type =~ $ct {
-				#log debug $"content_type_list: ($ct); found: ($it.content_type)"
-				return $it
-			}
-		})
-		#log info "content_type_filter:"
-		#print $content_type_filter
-		if ($content_type_filter | length) > 0 {
-			#log debug $"content_type_list: ($ct); found: ($content_type_filter)"
-			return $content_type_filter
-		}
-	} | flatten)
-	#log info "content_type_filtered:"
-	#print ($content_type_filtered | select name content_type size)
-	if ($content_type_filtered | length) == 0 {
-		log error "Could not filter assets by content type"
-		log error $"Current list: ($assets)"
-		print "Assets:"
-		print $assets
-		print "Content Type Filtered:"
-		print $content_type_filtered
-		return null
-	} else if ($content_type_filtered | length) == 1 {
-		log debug $"Found one asset filtered by Content Type: ($content_type_filtered)"
-		return $content_type_filtered
-	}
-
-	# Filter out non-binary filenames such as .deb, .rpm, .sha256, .sha512, etc. by selecting only valid extensions.
-	# This is the list of acceptable filename values.
-	let filename_extension_list = [
-		"tar.gz",
-		"tar.xz",
-		"zip",
-	]
-	log info $"Iterating over filename_extension_list: ($filename_extension_list)"
-	let filename_extension_filtered = ($filename_extension_list | each {|fe|
-		log debug $"filename_extension_list: ($fe)"
-		let filename_extension_filter = ($content_type_filtered | each {|it|
-			let $ext = ($it.name | file-extension)
-			if ($it.name | file-extension) == $fe {
-				log debug $"filename_extension_list: ($fe); found: ($it.name)"
-				return $it
-			} else {
-				log debug $"filename_extension_list: ($fe); not found: ($it.name); extension: ($ext)"
-			}
-		})
-		#log info "filename_extension_filter:"
-		#print $filename_extension_filter
-		if ($filename_extension_filter | length) > 0 {
-			#log debug $"filename_extension_filter: ($fe); found: ($filename_extension_filter)"
-			return $filename_extension_filter
-		}
-	} | flatten)
-	log info "filename_extension_filtered:"
-	print $filename_extension_filtered
-	if ($filename_extension_filtered | length) == 0 {
-		log error "Could not filter assets by filename extension"
-		# log error $"Current list: ($content_type_filtered)"
-		#print "content_type_filtered:"
-		#print ($content_type_filtered | select name content_type size)
-		print "Filename Extension Filtered:"
-		print $filename_extension_filtered
-		return null
-	} else if ($filename_extension_filtered | length) == 1 {
-		log debug $"Found one asset filtered by Filename Extension: ($filename_extension_filtered)"
-		return $filename_extension_filtered
-	}
-
-	# Map the OS to possible OS values in the release names. This is mainly for Apple.
-	let os_map = {
-		linux: [
-			linux,
-			# micro uses "linux64" as the os and arch combined.
-			# https://github.com/zyedidia/micro/releases
-			#linux64,
-		],
-		darwin: [
-			darwin,
-			apple,
-		],
-		windows: [
-			windows,
-		],
-	}
-	let os_list = ( $os_map | get ($nu.os-info.name) )
-	log info $"Iterating over os_list: ($os_list)"
-	let os_filtered = ($os_list | each {|os|
-		#log debug $"os: ($nu.os-info.name); os_list: ($os)"
-		let os_filter = ($filename_extension_filtered | each {|it|
-			if $it.name =~ $os {
-				#log debug $"os: ($nu.os-info.name); os_list: ($os); found: ($it.name)"
-				return $it
-			}
-		})
-		log info "os_filter:"
-		print $os_filter
-		if ($os_filter | length) > 0 {
-			#log debug $"os: ($nu.os-info.name); os_list: ($os); found: ($os_filter)"
-			return $os_filter
-		}
-	} | flatten)
-	log info "os_filtered:"
-	print $os_filtered
-	if ($os_filtered | length) == 0 {
-		log error "Could not filter assets by OS"
-		log error $"Current list: ($assets)"
-		print "Assets:"
-		print $assets
-		print "OS Filtered:"
-		print $os_filtered
-		return null
-	} else if ($os_filtered | length) == 1 {
-		log debug $"Found one asset filtered by OS: ($os_filtered)"
-		return $os_filtered
-	}
-
-	# Map the architecture to possible ARCH values in the release names.
-	let arch_map = {
-		x86_64: [
-			x86_64,
-			amd64,
-		],
-		aarch64: [
-			arm64,
-		],
-		arm64: [
-			arm64,
-		],
-	}
-	let arch_list = ( $arch_map | get ($nu.os-info.arch) )
-	log info $"Iterating over arch_list: ($arch_list)"
-	let arch_filtered = ($arch_list | each {|arch|
-		#log debug $"arch: ($nu.os-info.arch); arch_list: ($arch)"
-		let arch_filter = ($os_filtered | each {|it|
-			if $it.name =~ $arch {
-				#log debug $"arch: ($nu.os-info.arch); arch_list: ($arch); found: ($it.name)"
-				return $it
-			}
-		})
-		if ($arch_filter | length) > 0 {
-			#log debug $"arch: ($nu.os-info.arch); arch_list: ($arch); found: ($arch_filter)"
-			return $arch_filter
-		}
-	} | flatten)
-	log info "arch_filtered:"
-	print $arch_filtered
-	if ($arch_filtered | length) == 0 {
-		log error "Could not filter assets by arch"
-		log error $"Current list: ($os_filtered)"
-		print "OS Filtered:"
-		print $os_filtered
-		print "ARCH Filtered:"
-		print $arch_filtered
-		return null
-	} else if ($arch_filtered | length) == 1 {
-		log debug $"Found one asset filtered by ARCH: ($arch_filtered)"
-		return $arch_filtered
-	}
-
-	let flavor = "musl"
-	let flavor_filtered = $arch_filtered | each {|it| if $it.name =~ $flavor {return $it} }
-	if ($flavor_filtered | length) == 0 {
-		log error "Could not filter assets by flavor"
-		log error $"Current list: ($arch_filtered)"
-		print "ARCH Filtered:"
-		print $arch_filtered
-		print "Flavor Filtered:"
-		print $flavor_filtered
-		return null
-	} else if ($flavor_filtered | length) == 1 {
-		log debug $"Found one asset filtered by flavor: ($flavor_filtered)"
-		return $flavor_filtered
-	}
-
-	log error "Could not filter assets by OS, ARCH and flavor to result in one asset"
-	log error $"Current list: ($flavor_filtered)"
-	log info "flavor_filtered:"
-	print $flavor_filtered
-	return $flavor_filtered
-}
-
 # download-github-assets downloads the GitHub asset and returns a list of files.
-def download-github-asset [tmp_dir: string, asset_file: string, url: string]: nothing -> list {
-	let tmp_file: string = ($tmp_dir | path join $asset_file)
-	log debug $"tmp_dir: ($tmp_dir)"
-	log debug $"tmp_file: ($tmp_file)"
-	mkdir $tmp_dir
-	http get $url | save $tmp_file
-	#cd $tmp_dir
-	ouch --yes --quiet --accessible decompress --dir $tmp_dir $tmp_file
-	# ouch decompresses into exactly one directory
-	let asset_dir = (ls $tmp_dir | where type == dir).name.0
-	#cd $asset_dir
-	return (ls $asset_dir | where size > 1mb | each {|it| ([ $tmp_dir $asset_dir $it.name ] | path join)})
+def download-github-asset [
+	--dest-dir (-d): string,		# Destination directory to save the files
+	--remote-name (-f): string,		# Name of the remote file to save locally
+	--decompress (-u): bool,		# If true, decompress (uncompress) the files
+]: string -> list {
+	let url: string = $in
+	mut url_name = ($url | url-filename)
+	if not ($remote_name | is-empty) {
+		$url_name = $remote_name
+	}
+	let save_file: string = ($dest_dir | path join $url_name)
+	log debug $"dest_dir: ($dest_dir)"
+	log debug $"url_name: ($url_name)"
+	log debug $"save_file: ($save_file)"
+	# mkdir doesn't care if the directory exists
+	mkdir $dest_dir
+	http get $url | save $save_file
+	if (not ($decompress | is-empty)) and $decompress {
+		# ouch decompresses into exactly one directory EXCEPT if there is only 1 file.
+		ouch --yes --quiet --accessible decompress --dir $dest_dir $save_file
+		if (ls $dest_dir | where type == dir | length) == 0 {
+			# Only 1 file was extracted.
+			return (ls $dest_dir | where type == file and name != $save_file | each {|it| ([ $dest_dir $it.name ] | path join)})
+		} else {
+			let asset_dir = (ls $dest_dir | where type == dir).name.0
+			return (ls $asset_dir | where size > 1mb | each {|it| ([ $dest_dir $asset_dir $it.name ] | path join)})
+		}
+	} else {
+		return (ls $save_file | each {|it| ([ $dest_dir $it.name ] | path join)})
+	}
 }
 
 # install-binaries will install the files into bin_dir
-def install-binaries [bin_dir: string, files: list<string>] {
-	if ($bin_dir | str length) == 0 or ($bin_dir | is-empty) {
+def install-binaries [bin_dir: string, files: list<string>]: nothing -> nothing {
+	if ($bin_dir | is-empty) or ($bin_dir | str length) == 0 {
 		log error $"bin_dir is not defined: '($bin_dir)'"
 		return null
 	}
 	$files | each {|it|
+		let filename: string = ($it | path basename)
 		log info $"installing '($it)' to '($bin_dir)'"
-		print $"cp ($it) ($bin_dir)"
 		cp $it $bin_dir
+		if $nu.os-info.name != "windows" {
+			^chmod a+rx ([$bin_dir, $filename] | path join)
+		}
 	}
+	return null
 }
 
 # get-bin-dir will get the bin directory to install the binaries.
@@ -385,11 +209,10 @@ def dl-compressed [
 	--filter (-f): string	# Filter the results if a single release can't be determined
 ]: table<record> -> table<record> {
 	mut input: table<record: any> = $in
-	mut filtered: table<record: any> = $input
 
 	if ($input | length) > 1 {
 		# Compressed assets need to be filtered by extension.
-		$filtered = ($input | filter-extension)
+		let filtered: table<record: any> = ($input | filter-extension)
 		match ($filtered | length) {
 			0 => {
 				log error $"Filtering by extension resulted in 0 assets"
@@ -408,13 +231,16 @@ def dl-compressed [
 	}
 
 	# $input has exactly 1 record
-	let tmp_dir: string = ({ parent: "/tmp", stem: $"package-(random uuid)" } | path join)
-	let files = download-github-asset $tmp_dir $input.name.0 $input.browser_download_url.0
+	let tmp_dir: string = ({ parent: $nu.temp-path, stem: $"package-(random uuid)" } | path join)
+	mkdir $tmp_dir
+	let files = ($input.browser_download_url.0
+		| download-github-asset --dest-dir $tmp_dir --decompress true)
 	log info $"Files: ($files)"
 
 	let bin_dir = get-bin-dir
 	log debug $"bin_dir: ($bin_dir)"
 	install-binaries $bin_dir $files
+	rm -r $tmp_dir
 
 	return $input
 }
@@ -432,9 +258,16 @@ def dl-uncompressed [
 	}
 
 	# $input has exactly 1 record
-	let tmp_dir: string = ({ parent: "/tmp", stem: $"package-(random uuid)" } | path join)
-	let files = download-github-asset $tmp_dir $input.name.0 $input.browser_download_url.0
+	let tmp_dir: string = ({ parent: $nu.temp-path, stem: $"package-(random uuid)" } | path join)
+	log debug $"name: ($name)"
+	let files = ($input.browser_download_url.0
+		| download-github-asset --dest-dir $tmp_dir --remote-name $name --decompress false)
 	log info $"Files: ($files)"
+
+	let bin_dir = get-bin-dir
+	log debug $"bin_dir: ($bin_dir)"
+	install-binaries $bin_dir $files
+	rm -r $tmp_dir
 
 	return $input
 }
@@ -467,20 +300,25 @@ def dl-gh [
 	}
 	$assets = $flavor
 	print ($assets)
-	
+
+	mut bin_name: string = ($repo | split column '/' | get column2.0)
+	if (not ($name | is-empty)) and ($name | str length) > 0 {
+		$bin_name = $name
+	}
+
 	# The content_type uniqueness determines if the assets are compressed. If all of them are
 	# "application/octet-stream", the assets are uncompressed.
 	let ct_count = $assets | get content_type | uniq --count
 	print ($ct_count)
 	if ($ct_count | length) == 1 and ($ct_count.value.0 == "application/octet-stream") {
 		log info "Uncompressed assets"
-		let results = ($assets | dl-uncompressed --name $name --filter $filter)
+		let results = ($assets | dl-uncompressed --name $bin_name --filter $filter)
 		#print ($results)
 		return $results
 	} else {
-		log info  "Compressed assets"
+		log info "Compressed assets"
 		# Compressed assets need to be filtered by extension.
-		let results = ($assets | dl-compressed --name $name --filter $filter)
+		let results = ($assets | dl-compressed --name $bin_name --filter $filter)
 		#print ($results)
 		return $results
 	}
@@ -501,49 +339,7 @@ def main [
 		print $"Filter: ($filter)"
 	}
 	print (dl-gh --name $name --filter $filter $repo)
-	return null
-
-	#log info $"Getting GitHub assets for '($repo)'"
-	#let assets = get-github-assets $repo
-	#let asset = filter_assets $assets
-	#if ($asset | length) > 1 {
-	#	#log debug $"Filtered asset: ($asset)"
-	#	log error $"Failed to extract a single asset. Perhaps you need to filter based on name?"
-	#	print $asset
-	#	return null
-	#}
-	## print ($asset | reject id node_id label uploader state download_count created_at updated_at)
-	#print $asset
-	#return null
-	#
-	#let tmp_dir = { parent: "/tmp", stem: $"package-(random uuid)" } | path join
-	#let files = download-github-asset $tmp_dir $asset.name.0 $asset.browser_download_url.0
-	#log info $"Files: ($files)"
-	#
-	#let bin_dir = get_bin_dir
-	#log debug $"bin_dir: ($bin_dir)"
-	#install_binaries $bin_dir $files
 }
-
-# List of packages that work:
-# FiloSottile/age
-# ellie/atuin
-# docker/compose
-# mr-karan/doggo
-# sharkdp/fd
-# go-acme/lego
-# ouch-org/ouch
-# BurntSushi/ripgrep
-# rclone/rclone
-# mozilla/sops
-# junegunn/fzf - Not compressed
-# casey/just
-
-# List of packages that need work:
-# cloudflare/cfssl - Not compressed
-# ryochack/peep - Not compressed
-# starship/starship - Additional releases () need to be filtered
-# watchexec/watchexec - filter out checksums
 
 # List of packages that do not work:
 # alacritty/alacritty - https://github.com/alacritty/alacritty/blob/master/INSTALL.md#opensuse

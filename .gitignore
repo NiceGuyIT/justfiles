@@ -13,6 +13,7 @@ just.exe
 
 # JSON files
 *.json
+!/packages/*.json
 
 # Created by https://www.toptal.com/developers/gitignore/api/jetbrains
 # Edit at https://www.toptal.com/developers/gitignore?templates=jetbrains
