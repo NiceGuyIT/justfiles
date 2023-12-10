@@ -4,6 +4,10 @@
     "description": "ripgrep recursively searches directories for a regex pattern while respecting your gitignore"
   },
   {
+    "name": "Byron/dua-cli",
+    "description": "View disk space usage and delete unwanted data, fast."
+  },
+  {
     "name": "FiloSottile/age",
     "description": "A simple, modern and secure encryption tool (and Go library) with small explicit keys, no config options, and UNIX-style composability"
   },
@@ -22,6 +26,14 @@
   {
     "name": "atuinsh/atuin",
     "description": "Atuin replaces your existing shell history with a SQLite database, and records additional context for your commands"
+  },
+  {
+    "name": "bailey27/cppcryptfs",
+    "description": "cppcryptfs is an implementation of the gocryptfs encrypted overlay filesystem in C++ for Windows"
+  },
+  {
+    "name": "bootandy/dust",
+    "description": "A more intuitive version of du in rust"
   },
   {
     "name": "casey/just",
@@ -48,6 +60,10 @@
     "description": "Define and run multi-container applications with Docker"
   },
   {
+    "name": "dundee/gdu",
+    "description": "Fast disk usage analyzer with console interface written in Go"
+  },
+  {
     "name": "evanw/esbuild",
     "description": "An extremely fast bundler for the web"
   },
@@ -72,6 +88,10 @@
     "description": "A task runner / simpler Make alternative written in Go"
   },
   {
+    "name": "gohugoio/hugo",
+    "description": "A fast and flexible static site generator built with love by bep, spf13, and friends in Go"
+  },
+  {
     "name": "hairyhenderson/gomplate",
     "description": "A flexible commandline tool for template rendering. Supports lots of local and remote datasources"
   },
@@ -80,8 +100,8 @@
     "description": "A post-modern modal text editor"
   },
   {
-    "name": "gohugoio/hugo",
-    "description": "A fast and flexible static site generator built with love by bep, spf13, and friends in Go"
+    "name": "imsnif/diskonaut",
+    "description": "Terminal disk space navigator"
   },
   {
     "name": "junegunn/fzf",
@@ -124,6 +144,10 @@
     "description": "Fast, secure, efficient backup program"
   },
   {
+    "name": "rfjakob/gocryptfs",
+    "description": "Encrypted overlay filesystem written in Go"
+  },
+  {
     "name": "rustic-rs/rustic",
     "description": "rustic is a backup tool that provides fast, encrypted, deduplicated backups"
   },
@@ -142,6 +166,10 @@
   {
     "name": "tomwright/dasel",
     "description": "Select, put and delete data from JSON, TOML, YAML, XML and CSV files with a single tool. Supports conversion between formats and can be used as a Go package"
+  },
+  {
+    "name": "twpayne/chezmoi",
+    "description": "Manage your dotfiles across multiple diverse machines, securely"
   },
   {
     "name": "uutils/coreutils",
