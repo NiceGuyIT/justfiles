@@ -160,6 +160,10 @@
     "description": "A simple, fast and user-friendly alternative to 'find'"
   },
   {
+    "name": "sclevine/yj",
+    "description": "CLI - Convert between YAML, TOML, JSON, and HCL. Preserves map order"
+  },
+  {
     "name": "starship/starship",
     "description": "The minimal, blazing-fast, and infinitely customizable prompt for any shell!"
   },

@@ -6,7 +6,7 @@ $env.NU_LOG_LEVEL = DEBUG
 # get-github-assets will download the latest GitHub release JSON and return the assets as a record.
 def get-github-assets [repo: string]: nothing -> table<record> {
 	# TODO: Use this to skip the download and prevent hitting GitHub's rate limit.
-	#open $"github-fzf.json"
+	#open $"github-yq.json"
 	http get $"https://api.github.com/repos/($repo)/releases/latest"
 		| get assets
 		| select browser_download_url name content_type size
@@ -145,11 +145,12 @@ def filter-content-type []: table<record> -> table<record> {
 	let input: table = $in
 	# List of acceptable Content-Type values.
 	let content_type_list: list<string> = [
-		"application/octet-stream",
+		"application/gzip",
 		"application/zip",
 		"application/x-gtar",
 		"application/x-xz",
-		"application/gzip",
+		"application/octet-stream",
+		"binary/octet-stream",
 	]
 	$input | where ($content_type_list | any {|ct| $it.content_type == $ct})
 }
@@ -299,6 +300,7 @@ def dl-gh [
 		$flavor = $assets
 	}
 	$assets = $flavor
+	log info "List of assets after filtering for content type, os, arch, and flavor"
 	print ($assets)
 
 	mut bin_name: string = ($repo | split column '/' | get column2.0)
@@ -308,19 +310,31 @@ def dl-gh [
 
 	# The content_type uniqueness determines if the assets are compressed. If all of them are
 	# "application/octet-stream", the assets are uncompressed.
-	let ct_count = $assets | get content_type | uniq --count
-	print ($ct_count)
-	if ($ct_count | length) == 1 and ($ct_count.value.0 == "application/octet-stream") {
-		log info "Uncompressed assets"
-		let results = ($assets | dl-uncompressed --name $bin_name --filter $filter)
+	# Exceptions:
+	# This fails for mikefarah/yq due to the following. In this case, prefer the uncompressed over the compressed.
+	#   1. The uncompressed binary is called "yq_linux_amd64"
+	#   2. Releases contain both compressed and uncompressed binaries.
+	if $repo =~ "mikefarah/yq" {
+		log info $"Repo ($repo) has mixed assets. Treating as uncompressed"
+		let results = ($assets | where content_type == "application/octet-stream" | dl-uncompressed --name 'yq' --filter $filter)
 		#print ($results)
 		return $results
 	} else {
-		log info "Compressed assets"
-		# Compressed assets need to be filtered by extension.
-		let results = ($assets | dl-compressed --name $bin_name --filter $filter)
-		#print ($results)
-		return $results
+		let ct_count = $assets | get content_type | uniq --count
+		log info $"Count of assets by content type"
+		print ($ct_count)
+		if ($ct_count | length) == 1 and ($ct_count.value.0 == "application/octet-stream") {
+			log info $"Repo ($repo) has uncompressed assets"
+			let results = ($assets | dl-uncompressed --name $bin_name --filter $filter)
+			#print ($results)
+			return $results
+		} else {
+			log info $"Repo ($repo) has compressed assets"
+			# Compressed assets need to be filtered by extension.
+			let results = ($assets | dl-compressed --name $bin_name --filter $filter)
+			#print ($results)
+			return $results
+		}
 	}
 	return
 }
@@ -332,6 +346,7 @@ def main [
 ]: nothing -> nothing {
 	# Separator for REPL
 	print "=============================="
+	log info $"Downloading ($repo)"
 	if not ($name | is-empty) {
 		print $"Name: ($name)"
 	}
