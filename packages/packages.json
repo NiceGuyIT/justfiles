@@ -123,6 +123,10 @@
     "name": "mr-karan/doggo",
     "description": "Command-line DNS Client for Humans. Written in Golang"
   },
+{
+    "name": "nushell/nushell",
+    "description": "A new type of shell"
+  },
   {
     "name": "ouch-org/ouch",
     "description": "Painless compression and decompression in the terminal. ouch stands for Obvious Unified Compression Helper."

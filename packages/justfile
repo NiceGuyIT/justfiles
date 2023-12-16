@@ -22,4 +22,8 @@ search name:
 # Install package
 install package:
 	#!/usr/bin/env nu
-	nu get-package.nu {{package}}
+	if "{{package}}" == "nushell/nushell" {
+		nu get-package.nu {{package}} --filter full
+	} else {
+		nu get-package.nu {{package}}
+	}

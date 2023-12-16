@@ -1,7 +1,9 @@
 #!/usr/bin/env nu
 
 use std log
-$env.NU_LOG_LEVEL = DEBUG
+if not ("NU_LOG_LEVEL" in $env) {
+	$env.NU_LOG_LEVEL = DEBUG
+}
 
 # get-github-assets will download the latest GitHub release JSON and return the assets as a record.
 def get-github-assets [repo: string]: nothing -> table<record> {
@@ -114,8 +116,15 @@ def filter-os []: table<record> -> table<record> {
 		],
 	}
 	let os_list = ($os_map | get ($nu.os-info.name))
-	# FIXME: $in throws "Input type not supported."
-	$input | where ($os_list | any {|os| $it.name =~ $os })
+	let filtered: table = (
+		# FIXME: $in throws "Input type not supported."
+		$input | where ($os_list | any {|os| $it.name =~ $os })
+	)
+	if ($env.NU_LOG_LEVEL == "DEBUG") {
+		log debug $"Filtered by OS:"
+		print ($filtered | select name content_type size)
+	}
+	return $filtered
 }
 
 # filter-arch will filter out binaries that do not match the current archtecture
@@ -129,6 +138,7 @@ def filter-arch []: table<record> -> table<record> {
 			amd64,
 		],
 		aarch64: [
+			aarch64,
 			arm64,
 		],
 		arm64: [
@@ -136,8 +146,15 @@ def filter-arch []: table<record> -> table<record> {
 		],
 	}
 	let arch_list = ($arch_map | get ($nu.os-info.arch))
-	# FIXME: $in throws "Input type not supported."
-	$input | where ($arch_list | any {|arch| $it.name =~ $arch })
+	let filtered: table = (
+		# FIXME: $in throws "Input type not supported."
+		$input | where ($arch_list | any {|arch| $it.name =~ $arch })
+	)
+	if ($env.NU_LOG_LEVEL == "DEBUG") {
+		log debug $"Filtered by architecture:"
+		print ($filtered | select name content_type size)
+	}
+	return $filtered
 }
 
 # filter-content-type will filter out non-binary content types.
@@ -152,7 +169,14 @@ def filter-content-type []: table<record> -> table<record> {
 		"application/octet-stream",
 		"binary/octet-stream",
 	]
-	$input | where ($content_type_list | any {|ct| $it.content_type == $ct})
+	let filtered: table = (
+		$input | where ($content_type_list | any {|ct| $it.content_type == $ct})
+	)
+	if ($env.NU_LOG_LEVEL == "DEBUG") {
+		log debug $"Filtered by content type:"
+		print ($filtered | select name content_type size)
+	}
+	return $filtered
 }
 
 # filter-extension will filter out non-binary filenames such as .deb, .rpm, .sha256, .sha512, etc. by selecting only
@@ -168,6 +192,10 @@ def filter-extension []: table<record> -> table<record> {
 	let filtered: table = (
 		$input | where ($extension_list | any {|ext| $it.name | str ends-with $ext})
 	)
+	if ($env.NU_LOG_LEVEL == "DEBUG") {
+		log debug $"Filtered by extension:"
+		print ($filtered | select name content_type size)
+	}
 	return $filtered
 }
 
@@ -176,11 +204,17 @@ def has-flavor []: table<record> -> bool {
 	let input: table = $in
 	let flavor_list = [
 		"musl",
-		"gnu"
+		"gnu",
+		# Nushell has "full"
+		#"full",
 	]
 	let filtered: table = (
 		$input | where ($flavor_list | any {|f| $it.name =~ $"\\b($f)\\b" })
 	)
+	if ($env.NU_LOG_LEVEL == "DEBUG") {
+		log debug $"Has flavor: (not ($filtered | length) == 0)"
+		print ($filtered | select name content_type size)
+	}
 	return (not ($filtered | length) == 0)
 }
 
@@ -292,7 +326,9 @@ def dl-gh [
 
 	# Check if the asset names use flavors, i.e. musl, gnu, etc., and filter them
 	mut flavor: table<record: any> = $assets
-	if ($assets | has-flavor) {
+	if not ($flavor | is-empty) {
+		$flavor = ($assets | filter-flavor $filter)
+	} else if ($assets | has-flavor) {
 		$flavor = ($assets | filter-flavor)
 	}
 	if ($flavor | length) == 0 {
@@ -301,7 +337,7 @@ def dl-gh [
 	}
 	$assets = $flavor
 	log info "List of assets after filtering for content type, os, arch, and flavor"
-	print ($assets)
+	print ($assets | table --width 200)
 
 	mut bin_name: string = ($repo | split column '/' | get column2.0)
 	if (not ($name | is-empty)) and ($name | str length) > 0 {
@@ -345,7 +381,9 @@ def main [
 	--filter (-f): string	# Filter the results if a single release can't be determined
 ]: nothing -> nothing {
 	# Separator for REPL
-	print "=============================="
+	if ($env.NU_LOG_LEVEL == "DEBUG") {
+		print "=============================="
+	}
 	log info $"Downloading ($repo)"
 	if not ($name | is-empty) {
 		print $"Name: ($name)"
