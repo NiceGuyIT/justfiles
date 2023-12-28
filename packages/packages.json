@@ -44,6 +44,10 @@
     "description": "just is a handy way to save and run project-specific commands"
   },
   {
+    "name": "cli/cli",
+    "description": "gh is GitHub on the command line. It brings pull requests, issues, and other GitHub concepts to the terminal next to where you are already working with git and your code."
+  },
+  {
     "name": "cloudflare/cfssl",
     "description": "CFSSL is CloudFlare's PKI/TLS swiss army knife. It is both a command line tool and an HTTP API server for signing, verifying, and bundling TLS certificates"
   },
