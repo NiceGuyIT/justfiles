@@ -18,7 +18,7 @@ def get-github-assets [repo: string]: nothing -> table<record> {
 def download-github-asset [
 	--dest-dir (-d): string,		# Destination directory to save the files
 	--remote-name (-f): string,		# Name of the remote file to save locally
-	--decompress (-u): bool,		# If true, decompress (uncompress) the files
+	--decompress (-u),			# If true, decompress (uncompress) the files
 ]: string -> list {
 	let url: string = $in
 	mut url_name = ($url | url-filename)
