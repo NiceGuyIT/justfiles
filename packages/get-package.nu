@@ -269,7 +269,7 @@ def dl-compressed [
 	let tmp_dir: string = ({ parent: $nu.temp-path, stem: $"package-(random uuid)" } | path join)
 	mkdir $tmp_dir
 	let files = ($input.browser_download_url.0
-		| download-github-asset --dest-dir $tmp_dir --decompress true)
+		| download-github-asset --dest-dir $tmp_dir --decompress)
 	log info $"Files: ($files)"
 
 	let bin_dir = get-bin-dir
